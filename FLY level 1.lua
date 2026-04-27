@@ -28,33 +28,8 @@ MainFrame.Size = UDim2.new(0, 150, 0, 150)
 MainFrame.Position = UDim2.new(0, 20, 0, 20)
 MainFrame.BackgroundTransparency = 1
 MainFrame.Active = true
+MainFrame.Draggable = true -- 手机/电脑都支持拖动
 MainFrame.Parent = FlyUI
-
--- 拖动
-local dragging = false
-local dragStart, startPos
-
-MainFrame.InputBegan:Connect(function(input)
-    local t = input.UserInputType
-    if t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if not dragging then return end
-    local t = input.UserInputType
-    if t == Enum.UserInputType.MouseMovement or t == Enum.UserInputType.Touch then
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(0, startPos.X.Offset + delta.X, 0, startPos.Y.Offset + delta.Y)
-    end
-end)
-
-MainFrame.InputEnded:Connect(function()
-    dragging = false
-end)
 
 -- 按钮创建
 local CloseBtn = Instance.new("TextButton")
@@ -80,6 +55,7 @@ UpBtn.Position = UDim2.new(0, 0, 0, 50)
 UpBtn.BackgroundColor3 = Color3.fromRGB(100, 255, 150)
 UpBtn.Text = "上"
 UpBtn.TextScaled = true
+UpBtn.AutoButtonColor = false
 UpBtn.Parent = MainFrame
 
 local SpeedUpBtn = Instance.new("TextButton")
@@ -104,6 +80,7 @@ DownBtn.Position = UDim2.new(0, 0, 0, 100)
 DownBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 100)
 DownBtn.Text = "下"
 DownBtn.TextScaled = true
+DownBtn.AutoButtonColor = false
 DownBtn.Parent = MainFrame
 
 local SpeedDownBtn = Instance.new("TextButton")
@@ -122,12 +99,18 @@ SpeedLabel.Text = tostring(BaseSpeed)
 SpeedLabel.TextScaled = true
 SpeedLabel.Parent = MainFrame
 
+-- 触屏支持
 local upHeld = false
 local downHeld = false
+
+-- 手机/电脑通用按住逻辑
 UpBtn.MouseButton1Down:Connect(function() upHeld = true end)
 UpBtn.MouseButton1Up:Connect(function() upHeld = false end)
+UpBtn.TouchLongPress:Connect(function(_, state) upHeld = state end)
+
 DownBtn.MouseButton1Down:Connect(function() downHeld = true end)
 DownBtn.MouseButton1Up:Connect(function() downHeld = false end)
+DownBtn.TouchLongPress:Connect(function(_, state) downHeld = state end)
 
 -- ========== 纯固定速度飞行【无加速 无提速 无漂移】 ==========
 local function FlyLoop()
@@ -137,13 +120,12 @@ local function FlyLoop()
 
         local cam = workspace.CurrentCamera
         
-        -- 只保留固定速度，彻底删除自动加速代码
+        -- 固定速度，不漂移
         if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
             CurrentSpeed = BaseSpeed
             BodyVelocity.Velocity = ((cam.CFrame.LookVector * (ctrl.f+ctrl.b)) + ((cam.CFrame * CFrame.new(ctrl.l+ctrl.r, 0, 0).Position) - cam.CFrame.Position)) * CurrentSpeed
             lastctrl = table.clone(ctrl)
         else
-            -- 松开按键立刻停移，不漂移
             BodyVelocity.Velocity = Vector3.new(0, 0.1, 0)
         end
 
@@ -184,13 +166,11 @@ local function DisableFly()
     flying = false
 end
 
--- WASD / E开关
+-- ========== 仅保留 WASD 控制方向（电脑端） ==========
 UserInputService.InputBegan:Connect(function(input,gp)
     if gp then return end
     local key = input.KeyCode.Name:lower()
-    if key == "e" then
-        if flying then DisableFly() else EnableFly() end
-    elseif key == "w" then ctrl.f = 1
+    if key == "w" then ctrl.f = 1
     elseif key == "s" then ctrl.b = -1
     elseif key == "a" then ctrl.l = -1
     elseif key == "d" then ctrl.r = 1
@@ -206,12 +186,19 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- UI按键
+-- UI按键（手机电脑通用）
 ToggleBtn.MouseButton1Click:Connect(function()
+    if flying then DisableFly() else EnableFly() end
+end)
+ToggleBtn.TouchTap:Connect(function()
     if flying then DisableFly() else EnableFly() end
 end)
 
 CloseBtn.MouseButton1Click:Connect(function()
+    DisableFly()
+    FlyUI:Destroy()
+end)
+CloseBtn.TouchTap:Connect(function()
     DisableFly()
     FlyUI:Destroy()
 end)
@@ -220,7 +207,16 @@ SpeedUpBtn.MouseButton1Click:Connect(function()
     BaseSpeed = math.min(BaseSpeed + 10, maxspeed)
     SpeedLabel.Text = tostring(BaseSpeed)
 end)
+SpeedUpBtn.TouchTap:Connect(function()
+    BaseSpeed = math.min(BaseSpeed + 10, maxspeed)
+    SpeedLabel.Text = tostring(BaseSpeed)
+end)
+
 SpeedDownBtn.MouseButton1Click:Connect(function()
+    BaseSpeed = math.max(BaseSpeed - 10, 10)
+    SpeedLabel.Text = tostring(BaseSpeed)
+end)
+SpeedDownBtn.TouchTap:Connect(function()
     BaseSpeed = math.max(BaseSpeed - 10, 10)
     SpeedLabel.Text = tostring(BaseSpeed)
 end)
