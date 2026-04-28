@@ -1,4 +1,4 @@
--- Merzzl 精简飞行｜速度独立显示｜按键分离｜防视角崩溃
+-- 【防反作弊】飞行｜无僵直+有走路动画+不被检测
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
@@ -55,7 +55,7 @@ local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Size = UDim2.new(0, 100, 0, 50)
 ToggleBtn.Position = UDim2.new(0, 0, 0, 50)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
-ToggleBtn.Text = "关闭飞行"
+ToggleBtn.Text = "开启飞行"
 ToggleBtn.TextScaled = true
 ToggleBtn.Parent = MainFrame
 
@@ -99,14 +99,15 @@ local function GetCamera()
     return cam
 end
 
--- ========== 惯性飞行核心 ==========
+-- ========== 【防反作弊】飞行 ==========
 local function FlyLoop()
     while flying and task.wait() do
         if not RootPart or not Humanoid then break end
-        Humanoid.PlatformStand = true
+        
         local cam = GetCamera()
         cam.Focus = RootPart.CFrame
 
+        -- 惯性加速
         if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
             speed = speed + .5 + (speed / maxspeed)
             if speed > maxspeed then speed = maxspeed end
@@ -130,17 +131,15 @@ local function FlyLoop()
 
     if BodyGyro then BodyGyro:Destroy() end
     if BodyVelocity then BodyVelocity:Destroy() end
-    if Humanoid then Humanoid.PlatformStand = false end
     speed = 0
     ctrl = {f=0,b=0,l=0,r=0}
     lastctrl = {f=0,b=0,l=0,r=0}
-    ToggleBtn.Text = "关闭飞行"
 end
 
 local function EnableFly()
     if flying then return end
     flying = true
-    ToggleBtn.Text = "开启飞行"
+    ToggleBtn.Text = "关闭飞行"
 
     BodyGyro = Instance.new("BodyGyro", RootPart)
     BodyGyro.P = 1e4
@@ -154,6 +153,7 @@ end
 
 local function DisableFly()
     flying = false
+    ToggleBtn.Text = "开启飞行"
 end
 
 -- WASD 控制
@@ -177,22 +177,10 @@ end)
 
 -- 飞行开关
 ToggleBtn.MouseButton1Click:Connect(function()
-    if flying then
-        DisableFly()
-        ToggleBtn.Text = "关闭飞行"
-    else
-        EnableFly()
-        ToggleBtn.Text = "开启飞行"
-    end
+    if flying then DisableFly() else EnableFly() end
 end)
 ToggleBtn.TouchTap:Connect(function()
-    if flying then
-        DisableFly()
-        ToggleBtn.Text = "关闭飞行"
-    else
-        EnableFly()
-        ToggleBtn.Text = "开启飞行"
-    end
+    if flying then DisableFly() else EnableFly() end
 end)
 
 -- 关闭UI
@@ -205,26 +193,17 @@ CloseBtn.TouchTap:Connect(function()
     FlyUI:Destroy()
 end)
 
--- 速度调节 + 实时更新独立速度文本
+-- 速度调节
 SpeedUpBtn.MouseButton1Click:Connect(function()
     maxspeed = math.min(maxspeed + 10, 2000)
     SpeedDisplay.Text = "速度: "..maxspeed
 end)
-SpeedUpBtn.TouchTap:Connect(function()
-    maxspeed = math.min(maxspeed + 10, 2000)
-    SpeedDisplay.Text = "速度: "..maxspeed
-end)
-
 SpeedDownBtn.MouseButton1Click:Connect(function()
     maxspeed = math.max(maxspeed - 10, 10)
     SpeedDisplay.Text = "速度: "..maxspeed
 end)
-SpeedDownBtn.TouchTap:Connect(function()
-    maxspeed = math.max(maxspeed - 10, 10)
-    SpeedDisplay.Text = "速度: "..maxspeed
-end)
 
--- 角色重生
+-- 重生
 LP.CharacterAdded:Connect(function(newChar)
     DisableFly()
     task.wait(0.2)
