@@ -120,11 +120,11 @@ AirWalkLoop = RunService.RenderStepped:Connect(function()
     if Humanoid.FloorMaterial ~= Enum.Material.Air then return end
 
     local Fake = Instance.new("Part")
-    Fake.Size = Vector3.new(2.8,0.4,2.8)
-    Fake.Position = Root.Position - Vector3.new(0,3.2,0)
+    Fake.Size = Vector3.new(0.4,0.2,0.4)
+    Fake.Position = Root.Position - Vector3.new(0,3.5,0)
     Fake.Anchored = true
     Fake.CanCollide = true
-    Fake.Transparency = 0.9
+    Fake.Transparency = 0.8
     Fake.CastShadow = false
     Fake.Parent = workspace
 
