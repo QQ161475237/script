@@ -121,7 +121,7 @@ AirWalkLoop = RunService.RenderStepped:Connect(function()
 
     local Fake = Instance.new("Part")
     Fake.Size = Vector3.new(0.4,0.2,0.4)
-    Fake.Position = Root.Position - Vector3.new(0,3.5,0)
+    Fake.Position = Root.Position - Vector3.new(0,3.18,0)
     Fake.Anchored = true
     Fake.CanCollide = true
     Fake.Transparency = 0.8
