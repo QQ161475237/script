@@ -986,6 +986,381 @@ plr.CharacterAdded:Connect(onSpawn)
 end)
 
 -- =============================================
+-- 【功能 5】Silent Aim 无声瞄准 / 全服锁定（新增）
+-- =============================================
+local SilentAimTab = Tabs.Player:AddLeftGroupbox("🎯 Silent Aim", "cross")
+SilentAimTab:AddButton("启动无声瞄准(全服锁定)", function()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local Workspace = game:GetService("Workspace")
+
+-- 默认配置
+local Config = {
+    Enabled = false,
+    Smoothness = 0.35,
+    BlockTeam = false,
+}
+
+-- 当前锁定的目标
+local lockedTarget = nil
+
+-- 创建 UI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SilentAim"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+-- 主面板
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 200, 0, 130)
+MainFrame.Position = UDim2.new(0.02, 0, 0.4, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+MainFrame.BackgroundTransparency = 0.08
+MainFrame.BorderSizePixel = 1
+MainFrame.BorderColor3 = Color3.fromRGB(80, 120, 220)
+MainFrame.Active = true
+MainFrame.Parent = ScreenGui
+
+-- 圆角
+local FrameCorner = Instance.new("UICorner")
+FrameCorner.CornerRadius = UDim.new(0, 10)
+FrameCorner.Parent = MainFrame
+
+-- 顶部装饰条
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 2)
+TopBar.Position = UDim2.new(0, 0, 0, 0)
+TopBar.BackgroundColor3 = Color3.fromRGB(80, 120, 220)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+-- 标题栏
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.BackgroundTransparency = 1
+TitleBar.Parent = MainFrame
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Size = UDim2.new(1, -40, 1, 0)
+TitleText.Position = UDim2.new(0, 10, 0, 0)
+TitleText.BackgroundTransparency = 1
+TitleText.Text = "🎯 目标锁定 (全服)"
+TitleText.TextColor3 = Color3.fromRGB(230, 230, 255)
+TitleText.Font = Enum.Font.GothamBold
+TitleText.TextSize = 13
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+TitleText.Parent = TitleBar
+
+-- 关闭按钮
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Position = UDim2.new(1, -32, 0.5, -12)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "x"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 120, 120)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 14
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Parent = TitleBar
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- 拖动功能
+local dragging = false
+local dragStart = nil
+local startPos = nil
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- 内容区域
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -16, 1, -38)
+Content.Position = UDim2.new(0, 8, 0, 34)
+Content.BackgroundTransparency = 1
+Content.Parent = MainFrame
+
+-- 开关按钮
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(0, 60, 0, 26)
+ToggleBtn.Position = UDim2.new(0, 0, 0, 0)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 75)
+ToggleBtn.Text = "关闭"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 150, 150)
+ToggleBtn.Font = Enum.Font.GothamSemibold
+ToggleBtn.TextSize = 12
+ToggleBtn.BorderSizePixel = 0
+ToggleBtn.Parent = Content
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 6)
+ToggleCorner.Parent = ToggleBtn
+
+-- 状态指示灯
+local StatusDot = Instance.new("Frame")
+StatusDot.Size = UDim2.new(0, 8, 0, 8)
+StatusDot.Position = UDim2.new(1, -10, 0.5, -4)
+StatusDot.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+StatusDot.BorderSizePixel = 0
+StatusDot.Parent = ToggleBtn
+
+local DotCorner = Instance.new("UICorner")
+DotCorner.CornerRadius = UDim.new(1, 0)
+DotCorner.Parent = StatusDot
+
+-- 队友按钮
+local TeamBtn = Instance.new("TextButton")
+TeamBtn.Size = UDim2.new(1, 0, 0, 28)
+TeamBtn.Position = UDim2.new(0, 0, 0, 36)
+TeamBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+TeamBtn.Text = "👥 不屏蔽队友"
+TeamBtn.TextColor3 = Color3.fromRGB(200, 180, 120)
+TeamBtn.Font = Enum.Font.GothamSemibold
+TeamBtn.TextSize = 12
+TeamBtn.BorderSizePixel = 0
+TeamBtn.Parent = Content
+
+local TeamCorner = Instance.new("UICorner")
+TeamCorner.CornerRadius = UDim.new(0, 6)
+TeamCorner.Parent = TeamBtn
+
+-- 目标显示
+local TargetLabel = Instance.new("TextLabel")
+TargetLabel.Size = UDim2.new(1, 0, 0, 20)
+TargetLabel.Position = UDim2.new(0, 0, 0, 74)
+TargetLabel.BackgroundTransparency = 1
+TargetLabel.Text = "🎯 目标: 无"
+TargetLabel.TextColor3 = Color3.fromRGB(160, 160, 200)
+TargetLabel.Font = Enum.Font.Gotham
+TargetLabel.TextSize = 11
+TargetLabel.TextXAlignment = Enum.TextXAlignment.Left
+TargetLabel.Parent = Content
+
+-- ========== 更新 UI ==========
+local function UpdateUI()
+    if Config.Enabled then
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 80)
+        ToggleBtn.Text = "开启"
+        ToggleBtn.TextColor3 = Color3.fromRGB(200, 255, 200)
+        StatusDot.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
+    else
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 75)
+        ToggleBtn.Text = "关闭"
+        ToggleBtn.TextColor3 = Color3.fromRGB(255, 150, 150)
+        StatusDot.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+        lockedTarget = nil
+        TargetLabel.Text = "🎯 目标: 无"
+        TargetLabel.TextColor3 = Color3.fromRGB(160, 160, 200)
+    end
+    
+    if Config.BlockTeam then
+        TeamBtn.BackgroundColor3 = Color3.fromRGB(45, 65, 55)
+        TeamBtn.Text = "🚫 屏蔽队友"
+        TeamBtn.TextColor3 = Color3.fromRGB(150, 255, 150)
+    else
+        TeamBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+        TeamBtn.Text = "👥 不屏蔽队友"
+        TeamBtn.TextColor3 = Color3.fromRGB(200, 180, 120)
+    end
+end
+
+local function UpdateTargetDisplay()
+    if lockedTarget and lockedTarget.player then
+        local name = lockedTarget.player.Name
+        if #name > 14 then name = name:sub(1, 11) .. "..." end
+        TargetLabel.Text = "🎯 目标: " .. name
+        TargetLabel.TextColor3 = Color3.fromRGB(255, 200, 120)
+    else
+        TargetLabel.Text = "🎯 目标: 无"
+        TargetLabel.TextColor3 = Color3.fromRGB(160, 160, 200)
+    end
+end
+
+-- 开关点击
+ToggleBtn.MouseButton1Click:Connect(function()
+    Config.Enabled = not Config.Enabled
+    UpdateUI()
+    if not Config.Enabled then
+        lockedTarget = nil
+        UpdateTargetDisplay()
+    end
+end)
+
+-- 队友按钮
+TeamBtn.MouseButton1Click:Connect(function()
+    Config.BlockTeam = not Config.BlockTeam
+    if not Config.BlockTeam then
+        lockedTarget = nil
+        UpdateTargetDisplay()
+    end
+    UpdateUI()
+end)
+
+-- ========== 核心逻辑（全服锁定，无距离/FOV限制） ==========
+
+-- 获取所有存活玩家（排除自己）
+local function getAllAlivePlayers()
+    local players = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+        
+        local char = player.Character
+        if not char then continue end
+        
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        local head = char:FindFirstChild("Head")
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        
+        if not hum or hum.Health <= 0 then continue end
+        if not head or not hrp then continue end
+        
+        -- 队友检查
+        if Config.BlockTeam then
+            local myTeam = LocalPlayer.Team
+            if myTeam and player.Team == myTeam then continue end
+        end
+        
+        table.insert(players, {
+            player = player,
+            head = head,
+            root = hrp,
+            humanoid = hum
+        })
+    end
+    return players
+end
+
+-- 获取最近的玩家（基于世界距离，无限制）
+local function getClosestPlayer()
+    local players = getAllAlivePlayers()
+    if #players == 0 then return nil end
+    
+    local selfChar = LocalPlayer.Character
+    local selfRoot = selfChar and selfChar:FindFirstChild("HumanoidRootPart")
+    if not selfRoot then return nil end
+    
+    local closest = nil
+    local closestDist = math.huge
+    
+    for _, p in ipairs(players) do
+        local dist = (p.root.Position - selfRoot.Position).Magnitude
+        if dist < closestDist then
+            closestDist = dist
+            closest = p
+        end
+    end
+    
+    return closest
+end
+
+-- 检查目标是否仍然有效
+local function isTargetValid(target)
+    if not target or not target.player then return false end
+    local char = target.player.Character
+    if not char then return false end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local head = char:FindFirstChild("Head")
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    
+    if not hum or hum.Health <= 0 then return false end
+    if not head or not hrp then return false end
+    
+    -- 更新引用
+    target.head = head
+    target.root = hrp
+    target.humanoid = hum
+    
+    -- 队友检查（如果开启屏蔽）
+    if Config.BlockTeam then
+        local myTeam = LocalPlayer.Team
+        if myTeam and target.player.Team == myTeam then return false end
+    end
+    
+    return true
+end
+
+-- 主循环
+RunService.RenderStepped:Connect(function(deltaTime)
+    if not Config.Enabled then return end
+    
+    local selfChar = LocalPlayer.Character
+    if not selfChar then
+        if lockedTarget then
+            lockedTarget = nil
+            UpdateTargetDisplay()
+        end
+        return
+    end
+    
+    local selfRoot = selfChar:FindFirstChild("HumanoidRootPart")
+    if not selfRoot then return end
+    
+    -- 检查当前目标是否仍然有效
+    if lockedTarget and not isTargetValid(lockedTarget) then
+        lockedTarget = nil
+        UpdateTargetDisplay()
+    end
+    
+    -- 没有目标时，锁定最近玩家
+    if not lockedTarget then
+        lockedTarget = getClosestPlayer()
+        UpdateTargetDisplay()
+        if lockedTarget then
+            print("[全服锁定] 锁定目标: " .. lockedTarget.player.Name)
+        end
+    end
+    
+    -- 转向锁定目标
+    if lockedTarget and lockedTarget.head then
+        local targetPos = lockedTarget.head.Position
+        local currentPos = selfRoot.Position
+        local direction = Vector3.new(targetPos.X - currentPos.X, 0, targetPos.Z - currentPos.Z).Unit
+        
+        if direction.Magnitude > 0 then
+            local targetCFrame = CFrame.lookAt(currentPos, currentPos + direction)
+            local speed = 1 - math.min(Config.Smoothness, 0.99)
+            selfRoot.CFrame = selfRoot.CFrame:Lerp(targetCFrame, speed)
+        end
+    end
+end)
+
+-- 角色重生时重置锁定
+LocalPlayer.CharacterAdded:Connect(function()
+    lockedTarget = nil
+    UpdateTargetDisplay()
+end)
+
+UpdateUI()
+print("[Silent Aim] 全服锁定版已加载")
+end)
+
+-- =============================================
 -- 原作者欢迎提示
 -- =============================================
 local Players = game.Players.LocalPlayer
