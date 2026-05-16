@@ -111,10 +111,14 @@ local Toggles = Library.Toggles
 Library.ForceCheckbox = false
 Library.ShowCustomCursor = true
 local Window = Library:CreateWindow({
-	Title = "MerzzL",
+	Title = "MerTSB",
 	Footer = "此脚本完全免费  Q群：544199307",
 	NotifySide = "Right",
 	ShowCustomCursor = true,
+
+	BackgroundImage = "rbxassetid://103051766393042",
+	BackgroundTransparency = 0.15,
+	BackgroundScale = 1,
 })
 
 local Tabs = {
