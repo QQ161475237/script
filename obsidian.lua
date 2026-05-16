@@ -13,6 +13,10 @@ local Window = Library:CreateWindow({
 	Footer = "此脚本完全免费  Q群：544199307",
 	NotifySide = "Right",
 	ShowCustomCursor = true,
+
+	BackgroundImage = "rbxassetid://103051766393042",
+	BackgroundTransparency = 0.15,
+	BackgroundScale = 1,
 })
 
 local Tabs = {
