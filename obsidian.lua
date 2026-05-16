@@ -1428,6 +1428,27 @@ SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
 ThemeManager:SetFolder("MyScriptHub")
 SaveManager:SetFolder("MyScriptHub/specific-game")
 SaveManager:SetSubFolder("specific-place")
+-- =============================================
+-- 【右侧】额外动作槽位（FE Ohio 专用）
+-- =============================================
+local RightGroup = Tabs.Player:AddRightGroupbox("🔧 额外功能", "plus")
+RightGroup:AddButton("额外动作槽位", function()
+    do
+        local id = 10449761463
+        if game.PlaceId ~= id then
+            return
+        end
+
+        local Players = game:GetService("Players")
+        local plr = Players.LocalPlayer
+
+        if plr:GetAttribute("ExtraSlots") == nil then
+            plr:SetAttribute("ExtraSlots", true)
+        end
+        
+        Library:Notify("✅ 额外动作槽位已解锁", "成功")
+    end
+end)
 SaveManager:BuildConfigSection(Tabs["UI Settings"])
 ThemeManager:ApplyToTab(Tabs["UI Settings"])
 SaveManager:LoadAutoloadConfig()
