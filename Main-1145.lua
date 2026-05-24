@@ -106,7 +106,7 @@ local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
 local Options = Library.Options
-local Toggles = Library.Toggles
+local _Toggles = Library.Toggles
 
 Library.ForceCheckbox = false
 Library.ShowCustomCursor = true
@@ -206,7 +206,7 @@ local function isValidTarget(plr)
     end
     if _G.wallCheck then
         local ray = Ray.new(cam.CFrame.Position, (plr.Character.Head.Position - cam.CFrame.Position).Unit * 500)
-        local hit, pos = workspace:FindPartOnRayWithIgnoreList(ray, {lp.Character})
+        local hit, _ = workspace:FindPartOnRayWithIgnoreList(ray, {lp.Character})
         if hit and hit:IsDescendantOf(plr.Character) then
             return true
         end
@@ -598,9 +598,18 @@ VisionBox:AddToggle("MapNightVisionTog", {
 
 local AimbotBox = Tabs.OtherTab:AddLeftGroupbox("Aimbot")
 local NoHeadBox = Tabs.OtherTab:AddLeftGroupbox("无头断腿")
+local IYBox = Tabs.OtherTab:AddLeftGroupbox("IY")
 local OtherBox = Tabs.OtherTab:AddLeftGroupbox("其他功能")
 local FPSBox = Tabs.OtherTab:AddRightGroupbox("FPS Ping实时显示")
 local R15Box = Tabs.OtherTab:AddRightGroupbox("R15")
+
+IYBox:AddButton({
+    Text = "执行IY脚本",
+    Func = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()    
+        Library:Notify({Title = "MerzzL", Description = "IY脚本已运行", Duration = 3})
+    end
+})
 
 OtherBox:AddToggle('ChatBox', {
     Text = '显示聊天框 | 一局一开',
