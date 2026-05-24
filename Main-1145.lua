@@ -643,6 +643,45 @@ OtherBox:AddToggle("InvAlwaysShowTog", {
     end
 })
 
+local instantInteractEnabled = false
+
+OtherBox:AddToggle("InstantInteractToggle", {
+    Text = "⚡ 秒互动（无需按住E）",
+    Default = false,
+    Callback = function(state)
+        instantInteractEnabled = state
+        
+        if state then
+            -- 修改所有现有的 ProximityPrompt
+            for _, prompt in pairs(workspace:GetDescendants()) do
+                if prompt:IsA("ProximityPrompt") then
+                    prompt.HoldDuration = 0
+                    prompt.RequiresLineOfSight = false
+                end
+            end
+            Library:Notify({Title = "MerzzL", Description = "秒互动已开启，按E瞬间互动", Duration = 2})
+        else
+            -- 恢复默认值
+            for _, prompt in pairs(workspace:GetDescendants()) do
+                if prompt:IsA("ProximityPrompt") then
+                    prompt.HoldDuration = 0.5
+                    prompt.RequiresLineOfSight = true
+                end
+            end
+            Library:Notify({Title = "MerzzL", Description = "秒互动已关闭", Duration = 2})
+        end
+    end
+})
+
+-- 监听新添加的物体（实时生效）
+workspace.DescendantAdded:Connect(function(desc)
+    if instantInteractEnabled and desc:IsA("ProximityPrompt") then
+        desc.HoldDuration = 0
+        desc.RequiresLineOfSight = false
+    end
+end)
+-- ========== 秒互动结束 ==========
+
 FPSBox:AddButton({
     Text = "开启FPS+Ping显示",
     Func = function()
