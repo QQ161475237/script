@@ -64,7 +64,7 @@ local Window = Rayfield:CreateWindow({
    ShowText = "界面",
    Theme = "Default",
 
-   ToggleUIKeybind = "F",
+   ToggleUIKeybind = "X",
 
    DisableRayfieldPrompts = false,
    DisableBuildWarnings = false,
